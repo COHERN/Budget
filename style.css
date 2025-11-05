@@ -1,98 +1,99 @@
-/* ---------- Base ---------- */
-:root{
-  --ink:#000;
-  --paper:#fff;
-  --accent:#0a0a0a;
-  --frame:6px;           /* bold outline thickness */
-  --radius:12px;
-  --muted:#666;
-}
+/* ---------- Inputs / buttons (tiny safe tweaks) ---------- */
+input,button,select{ font:inherit; }
+input{ width:100%; min-width:0; }      /* allow shrink inside grids */
+button{ cursor:pointer; }
 
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font:16px/1.4 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
-a{color:inherit;text-decoration:none}
-h1,h2,h3{margin:0 0 .5rem 0}
-small,.muted{color:var(--muted)}
-
-/* ---------- Frame + layout ---------- */
-.container{
-  max-width:1100px;
-  margin:24px auto;
-  padding:16px;
-}
-.frame{
-  border:var(--frame) solid var(--ink);
-  border-radius:var(--radius);
-  background:#fff;
-  padding:20px;
-}
-
-/* ---------- Top nav (shared across pages) ---------- */
-.nav{
-  border-bottom:var(--frame) solid var(--ink);
-  background:#fff;
-}
-.nav .container{display:flex;gap:12px;align-items:center;justify-content:space-between}
-.brand{font-weight:900;letter-spacing:1px}
-.navlinks{display:flex;gap:10px}
-.navlinks a{
-  display:inline-block;padding:10px 14px;border:2px solid var(--ink);border-radius:10px;
-}
-.navlinks a.active{background:#000;color:#fff}
-
-/* ---------- Inputs / buttons ---------- */
-input,button,select{
-  font:inherit;
-}
-.input{
-  width:100%;
-  padding:12px 14px;
-  border:3px solid var(--ink);
-  border-radius:10px;
-}
-.input.small{padding:8px 10px;border-width:2px}
-.btn{
-  display:inline-block;
-  padding:10px 14px;
-  border:2px solid var(--ink);
-  border-radius:12px;
-  background:#fff;
-  cursor:pointer;
-}
-.btn.danger{border-color:#b00020;color:#b00020}
-.btn.block{width:100%}
-
-/* ---------- KPI row ---------- */
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:14px 0}
-.kpi .label{color:#666;margin-bottom:4px}
-.kpi .value{font-weight:900;font-size:1.5rem;letter-spacing:1px}
-
-/* ---------- Bills grid (responsive, no overlap) ---------- */
+/* ---------- Bills grid (bulletproof + responsive) ---------- */
 .bills{
+  /* Prevent any child from overflowing the cell */
+  --gap: 10px;
   display:grid;
-  grid-template-columns: 2fr 1.2fr 1.2fr auto auto;
-  gap:10px;
+  gap: var(--gap);
   align-items:center;
-}
-.bill-head{font-weight:700;letter-spacing:1px}
-.bill-row{display:contents} /* CSS grid rows as contents for accessibility */
 
+  /* Desktop columns use minmax so fields can shrink without overlap */
+  grid-template-columns:
+    minmax(160px, 2fr)      /* NAME  */
+    minmax(140px, 1.2fr)    /* DATE  */
+    minmax(160px, 1.5fr)    /* AMOUNT*/
+    minmax(52px,  auto)     /* PAID  */
+    minmax(88px,  auto);    /* ACTION*/
+}
+
+/* Headers */
+.bill-head{
+  font-weight:700; letter-spacing:1px;
+  white-space:nowrap; min-width:0;
+}
+
+/* Each data "row" is a display:contents wrapper so items line up to the headers */
+.bill-row{ display:contents; }
+.bill-row > *{
+  min-width:0;              /* <== THIS fixes input overflow in iOS Safari */
+}
+
+/* Inputs inside the grid */
+.bills .input{
+  width:100%;
+  padding:10px 12px;
+  border:3px solid #000;
+  border-radius:10px;
+  line-height:1.2;
+}
+
+/* Paid checkbox keeps a fixed comfortable size without pushing layout */
+.bills .paid{
+  width:22px; height:22px;
+  margin:auto;              /* centers in the cell */
+  accent-color:#000;
+}
+
+/* Delete button column never wraps text */
+.bills .btn{ white-space:nowrap; }
+
+/* ---------- Breakpoints ---------- */
+
+/* Tablet down: give columns a bit more breathing room */
 @media (max-width: 900px){
-  .bills{ grid-template-columns: 1fr 1fr; }
-  .bill-head:nth-child(n+3){display:none} /* hide AMOUNT/PAID headers on small screens */
-  .bill-row > .amount,
-  .bill-row > .paid,
-  .bill-row > .actions{grid-column: span 1}
-  .bill-row > .amount{order:2}
-  .bill-row > .paid{order:3}
-  .bill-row > .actions{order:4}
+  .bills{
+    grid-template-columns:
+      minmax(140px, 2fr)    /* NAME  */
+      minmax(120px, 1.2fr)  /* DATE  */
+      minmax(140px, 1.4fr)  /* AMOUNT*/
+      minmax(52px, auto)    /* PAID  */
+      minmax(80px, auto);   /* ACTION*/
+  }
 }
 
-@media (max-width: 520px){
+/* Phablet/large phones: move PAID + ACTION to their own line but keep headers visible */
+@media (max-width: 680px){
+  /* Keep header row simple on small screens */
+  .bill-head{ font-size:.9rem; }
+
+  /* Two lines per bill:
+     [NAME] [DATE]
+     [AMOUNT] [PAID] [DELETE]  */
+  .bills{
+    grid-template-columns:
+      minmax(140px, 1fr)
+      minmax(120px, 1fr)
+      minmax(140px, 1fr)
+      minmax(52px,  auto)
+      minmax(80px,  auto);
+  }
+
+  /* Place each field in a specific column/row pair */
+  .bill-row > .name   { grid-column: 1 / span 1; }
+  .bill-row > .date   { grid-column: 2 / span 1; }
+  .bill-row > .amount { grid-column: 1 / span 1; grid-row: span 1; }
+  .bill-row > .paid   { grid-column: 2 / span 1; }
+  .bill-row > .actions{ grid-column: 3 / span 3; justify-self:start; }
+}
+
+/* Phones: stack everything one per line (no chance of overlap) */
+@media (max-width: 480px){
   .bills{ grid-template-columns: 1fr; }
-  .bill-row > *{grid-column:1}
+  .bill-head:nth-child(n){ display:none; }   /* hide top header row to save space */
+  .bill-row > *{ grid-column:1; }
+  .bill-row > .actions{ justify-self:end; }
 }
-
-/* tiny helper */
-.sep{height:var(--frame);background:#000;border-radius:8px;margin:20px 0}
-.footer-note{margin-top:10px;color:#666;font-size:.875rem}
