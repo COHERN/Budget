@@ -1,26 +1,57 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Budget Terminal</title>
-  <meta name="theme-color" content="#FAFAF8"/>
-  <link rel="icon" href="icons/icon-192.png">
-  <link href="style.css" rel="stylesheet">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Budget Terminal — Quick Check</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <nav class="tabs">
-    <div class="brand">BUDGET TERMINAL</div>
-    <div class="spacer"></div>
-    <a href="quick-check.html" class="tab">Quick Check</a>
-    <a href="bills.html" class="tab">Bills</a>
-    <a href="split.html" class="tab">50/30/20</a>
-    <a href="help.html" class="tab">Help</a>
-  </nav>
-  <div class="card">
-    <h2>Welcome to Budget Terminal</h2>
-    <p>Select a tab above to begin.</p>
-  </div>
+<body data-page="quick">
+  <!-- nav -->
+  <header class="nav">
+    <div class="container">
+      <div class="brand">BUDGET TERMINAL</div>
+      <nav class="navlinks">
+        <a href="index.html" class="active">Quick Check</a>
+        <a href="bills.html">Bills</a>
+        <a href="split.html">50/30/20</a>
+        <a href="help.html">Help</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="frame">
+      <h2>QUICK CHECK</h2>
+
+      <label class="muted">Current Balance</label>
+      <input id="balance" class="input" inputmode="decimal" placeholder="0.00">
+
+      <div style="height:12px"></div>
+
+      <label class="muted">Bonus / Purchase (optional)</label>
+      <input id="purchase" class="input" inputmode="decimal" placeholder="0.00">
+
+      <div class="kpis">
+        <div class="kpi"><div class="label">TOTAL UNPAID</div><div id="totalUnpaid" class="value">0.00</div></div>
+        <div class="kpi"><div class="label">LEFT AFTER BILLS</div><div id="leftAfter" class="value">0.00</div></div>
+        <div class="kpi"><div class="label">AFTER PURCHASE LEFT</div><div id="afterBuy" class="value">0.00</div></div>
+      </div>
+
+      <div class="sep"></div>
+
+      <h3>50/30/20 SPLIT</h3>
+      <label class="muted">Enter Income Amount</label>
+      <input id="income" class="input" inputmode="decimal" placeholder="0.00">
+      <div class="kpis" style="margin-top:10px">
+        <div class="kpi"><div class="label">NEEDS (50%)</div><div id="needs" class="value">0.00</div></div>
+        <div class="kpi"><div class="label">WANTS (30%)</div><div id="wants" class="value">0.00</div></div>
+        <div class="kpi"><div class="label">SAVINGS (20%)</div><div id="saves" class="value">0.00</div></div>
+      </div>
+      <div class="footer-note">Totals auto-read from your Bills. Everything saves in your browser.</div>
+    </section>
+  </main>
+
   <script src="app.js"></script>
 </body>
 </html>
