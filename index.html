@@ -2,55 +2,110 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Budget Terminal — Quick Check</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff"/>
+  <link rel="icon" href="icons/icon-192.png">
+  <link href="style.css" rel="stylesheet">
 </head>
-<body data-page="quick">
-  <!-- nav -->
-  <header class="nav">
-    <div class="container">
-      <div class="brand">BUDGET TERMINAL</div>
-      <nav class="navlinks">
-        <a href="index.html" class="active">Quick Check</a>
-        <a href="bills.html">Bills</a>
-        <a href="split.html">50/30/20</a>
-        <a href="help.html">Help</a>
-      </nav>
-    </div>
+<body>
+  <header class="topnav">
+    <div class="brand">$ BUDGET TERMINAL</div>
+    <nav class="links">
+      <a href="index.html" class="active">QUICK CHECK</a>
+      <a href="bills.html">BILLS</a>
+      <button id="helpBtn" class="linklike" type="button">HELP</button>
+    </nav>
   </header>
 
-  <main class="container">
-    <section class="frame">
-      <h2>QUICK CHECK</h2>
-
-      <label class="muted">Current Balance</label>
-      <input id="balance" class="input" inputmode="decimal" placeholder="0.00">
-
-      <div style="height:12px"></div>
-
-      <label class="muted">Bonus / Purchase (optional)</label>
-      <input id="purchase" class="input" inputmode="decimal" placeholder="0.00">
-
-      <div class="kpis">
-        <div class="kpi"><div class="label">TOTAL UNPAID</div><div id="totalUnpaid" class="value">0.00</div></div>
-        <div class="kpi"><div class="label">LEFT AFTER BILLS</div><div id="leftAfter" class="value">0.00</div></div>
-        <div class="kpi"><div class="label">AFTER PURCHASE LEFT</div><div id="afterBuy" class="value">0.00</div></div>
+  <main class="wrap">
+    <section class="card">
+      <h1>QUICK CHECK</h1>
+      <div class="grid2">
+        <label>ACCOUNT BALANCE
+          <div class="inputWrap">
+            <input id="balance" inputmode="decimal" placeholder="0.00">
+          </div>
+        </label>
+        <label>PLANNED PURCHASE (OPTIONAL)
+          <div class="inputWrap">
+            <input id="purchase" inputmode="decimal" placeholder="0.00">
+          </div>
+        </label>
       </div>
 
-      <div class="sep"></div>
-
-      <h3>50/30/20 SPLIT</h3>
-      <label class="muted">Enter Income Amount</label>
-      <input id="income" class="input" inputmode="decimal" placeholder="0.00">
-      <div class="kpis" style="margin-top:10px">
-        <div class="kpi"><div class="label">NEEDS (50%)</div><div id="needs" class="value">0.00</div></div>
-        <div class="kpi"><div class="label">WANTS (30%)</div><div id="wants" class="value">0.00</div></div>
-        <div class="kpi"><div class="label">SAVINGS (20%)</div><div id="saves" class="value">0.00</div></div>
+      <div class="grid3 results">
+        <div>
+          <div class="muted">TOTAL UNPAID</div>
+          <div id="totalUnpaid" class="kpi">—</div>
+        </div>
+        <div>
+          <div class="muted">LEFT AFTER BILLS</div>
+          <div id="leftAfter" class="kpi">—</div>
+        </div>
+        <div>
+          <div class="muted">AFTER PURCHASE LEFT</div>
+          <div id="afterBuy" class="kpi">—</div>
+        </div>
       </div>
-      <div class="footer-note">Totals auto-read from your Bills. Everything saves in your browser.</div>
+
+      <div class="actions">
+        <span id="coverageBadge" class="pill warning">WARNING</span>
+        <span id="buyBadge" class="pill warning">WARNING</span>
+      </div>
+
+      <!-- cadence summary auto-filled -->
+      <div class="muted small cadence" id="cadenceLine"></div>
+      <div class="muted small" id="cadenceEarly"></div>
+      <div class="muted small" id="cadenceLate"></div>
     </section>
+
+    <!-- Unpaid bills preview -->
+    <section class="card">
+      <h2>UNPAID BILLS (THIS MONTH)</h2>
+      <ul id="unpaidList" class="list"></ul>
+    </section>
+
+    <!-- Always-on 50/30/20 splitter -->
+    <section class="card">
+      <h2>50 / 30 / 20 SPLIT</h2>
+      <div class="grid2">
+        <label>AMOUNT TO SPLIT
+          <div class="inputWrap">
+            <input id="splitAmount" inputmode="decimal" placeholder="0.00">
+          </div>
+        </label>
+      </div>
+      <div class="grid3 results">
+        <div><div class="muted">NEEDS (50%)</div><div id="split50" class="kpi">—</div></div>
+        <div><div class="muted">WANTS (30%)</div><div id="split30" class="kpi">—</div></div>
+        <div><div class="muted">SAVINGS (20%)</div><div id="split20" class="kpi">—</div></div>
+      </div>
+    </section>
+
+    <footer class="footer" id="lastUpdated">LAST UPDATED —</footer>
   </main>
+
+  <!-- HELP OVERLAY -->
+  <div id="helpModal" class="modal hidden" aria-hidden="true" role="dialog">
+    <div class="modal__card">
+      <div class="modal__hdr">
+        <h3>HELP</h3>
+        <button id="helpClose" class="btn">CLOSE</button>
+      </div>
+      <div class="modal__body">
+        <p><strong>Quick Check</strong> compares your current balance against all <em>unpaid</em> bills saved on the Bills page.</p>
+        <ol>
+          <li>Enter <em>ACCOUNT BALANCE</em>.</li>
+          <li>(Optional) Enter a <em>PLANNED PURCHASE</em>.</li>
+          <li>Badges tell you if you’re covered and whether the purchase would break coverage.</li>
+        </ol>
+        <p>The 50/30/20 box is for splitting unexpected cash.</p>
+        <p>Your data is saved locally in this browser (localStorage).</p>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
