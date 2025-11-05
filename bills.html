@@ -1,28 +1,37 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bills</title>
-  <link href="style.css" rel="stylesheet">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Budget Terminal — Bills</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <nav class="tabs">
-    <a href="index.html" class="tab">Home</a>
-    <a href="quick-check.html" class="tab">Quick Check</a>
-    <a href="split.html" class="tab">50/30/20</a>
-    <a href="help.html" class="tab">Help</a>
-  </nav>
-  <div class="card">
-    <h2>Bills</h2>
-    <table id="billTable">
-      <thead>
-        <tr><th>BILL</th><th>DATE</th><th>AMOUNT</th><th>PAID</th><th></th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button id="addBillBtn">+ ADD BILL</button>
-  </div>
+<body data-page="bills">
+  <header class="nav">
+    <div class="container">
+      <div class="brand">BUDGET TERMINAL</div>
+      <nav class="navlinks">
+        <a href="index.html">Quick Check</a>
+        <a href="bills.html" class="active">Bills</a>
+        <a href="split.html">50/30/20</a>
+        <a href="help.html">Help</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="frame">
+      <h2>Bills</h2>
+      <div style="margin:10px 0">
+        <button id="addBill" class="btn">+ Add Bill</button>
+      </div>
+
+      <div id="billList" class="bills" aria-live="polite"></div>
+
+      <div class="footer-note">Tip: Tap any input to auto-select. Use the checkbox to mark a bill paid.</div>
+    </section>
+  </main>
+
   <script src="app.js"></script>
 </body>
 </html>
