@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Check</title>
+  <link href="style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="tabs">
+    <a href="index.html" class="tab">Home</a>
+    <a href="bills.html" class="tab">Bills</a>
+    <a href="split.html" class="tab">50/30/20</a>
+    <a href="help.html" class="tab">Help</a>
+  </nav>
+  <div class="card">
+    <h2>Quick Check</h2>
+    <label>Account Balance <input id="balance" type="number" placeholder="0.00"></label>
+    <label>Bonus Amount <input id="bonus" type="number" placeholder="0.00"></label>
+    <label>Purchase <input id="purchase" type="number" placeholder="0.00"></label>
+    <button id="calcBtn">Run Check</button>
+    <div id="result"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

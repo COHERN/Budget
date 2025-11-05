@@ -1,0 +1,8 @@
+body {font-family: monospace;background:#fff;color:#000;margin:0;padding:0;}
+.tabs{display:flex;align-items:center;gap:12px;padding:12px;border-bottom:3px solid #000;background:#fff;}
+.tab{text-decoration:none;color:#000;padding:8px 16px;border:2px solid #000;font-weight:700;}
+.card{border:3px solid #000;margin:20px;padding:20px;border-radius:8px;}
+input{padding:8px;border:2px solid #000;width:100%;box-sizing:border-box;}
+button{padding:10px 14px;border:2px solid #000;background:#fff;cursor:pointer;font-weight:700;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{border:2px solid #000;padding:6px;text-align:left;}
