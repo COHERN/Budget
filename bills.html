@@ -1,73 +1,57 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Budget Terminal — Bills</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ffffff"/>
-  <link rel="icon" href="icons/icon-192.png">
   <link href="style.css" rel="stylesheet">
 </head>
 <body>
-  <header class="topnav">
-    <div class="brand">$ BUDGET TERMINAL</div>
-    <nav class="links">
-      <a href="index.html">QUICK CHECK</a>
-      <a href="bills.html" class="active">BILLS</a>
-      <button id="helpBtn" class="linklike" type="button">HELP</button>
-    </nav>
+  <header class="nav">
+    <div class="wrap">
+      <div class="brand">BUDGET TERMINAL</div>
+      <nav class="links">
+        <a href="index.html">Quick Check</a>
+        <a class="active" href="bills.html">Bills</a>
+      </nav>
+      <div id="todayDate" class="today"></div>
+    </div>
   </header>
 
   <main class="wrap">
     <section class="card">
-      <h1>BILLS</h1>
-      <div class="row gap">
-        <button id="addBillBtn" class="btn">+ ADD BILL</button>
-        <button id="clearPaidBtn" class="btn ghost">UNCHECK ALL PAID</button>
+      <h1>Bills</h1>
+
+      <div class="toolbar">
+        <button id="addBillBtn" class="btn">+ Add Bill</button>
+        <button id="clearPaidBtn" class="btn ghost">Clear PAID</button>
       </div>
 
-      <table id="billTable">
-        <thead>
-          <tr>
-            <th>BILL</th><th>DATE</th><th>AMOUNT</th><th>PAID</th><th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+      <!-- Responsive “table” using CSS grid -->
+      <div id="billTable" class="billgrid billhead">
+        <div>NAME</div><div>DATE</div><div>AMOUNT</div><div>PAID</div><div></div>
+      </div>
+      <div id="billBody" class="billgrid"></div>
 
-    <footer class="footer" id="lastUpdated">LAST UPDATED —</footer>
+      <aside class="summary">
+        <div><span class="muted">Unpaid by 1st</span> <strong id="sumEarly">—</strong></div>
+        <div><span class="muted">Unpaid by 15th</span> <strong id="sumLate">—</strong></div>
+        <div class="divider thin"></div>
+        <div><span class="muted">Total Unpaid</span> <strong id="sumTotal">—</strong></div>
+      </aside>
+    </section>
   </main>
 
-  <!-- HELP OVERLAY (shared) -->
-  <div id="helpModal" class="modal hidden" aria-hidden="true" role="dialog">
-    <div class="modal__card">
-      <div class="modal__hdr">
-        <h3>HELP</h3>
-        <button id="helpClose" class="btn">CLOSE</button>
-      </div>
-      <div class="modal__body">
-        <p>Tap <strong>+ ADD BILL</strong> to create a row. Use <strong>DATE</strong> to pick a due date, set <strong>AMOUNT</strong>, and mark <strong>PAID</strong> when it’s paid.</p>
-        <p>All bills save instantly to your browser. The Quick Check page will automatically read these totals.</p>
-        <p>On iPhone, rows convert to tidy “cards” so nothing overlaps.</p>
-      </div>
-    </div>
-  </div>
+  <footer class="foot"><div class="wrap"><span id="lastUpdated">Last updated: —</span></div></footer>
 
-  <!-- Row template -->
   <template id="billRowTpl">
-    <tr>
-      <td data-label="BILL"><input class="b-name" type="text" /></td>
-      <td data-label="DATE"><input class="b-due" type="date" /></td>
-      <td data-label="AMOUNT">
-        <div class="inputWrap small">
-          <input class="b-amt" inputmode="decimal" />
-        </div>
-      </td>
-      <td data-label="PAID" class="center"><input type="checkbox" class="b-paid" /></td>
-      <td data-label=""><button class="rowDel btn ghost">DELETE</button></td>
-    </tr>
+    <div class="row">
+      <input class="b-name upper" placeholder="NAME">
+      <input class="b-date" type="date">
+      <input class="b-amt" inputmode="decimal" placeholder="0.00">
+      <label class="chk"><input type="checkbox" class="b-paid"><span></span></label>
+      <button class="rowDel btn danger">DELETE</button>
+    </div>
   </template>
 
   <script src="app.js"></script>
