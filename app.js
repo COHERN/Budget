@@ -1,272 +1,240 @@
-// app.js — Budget Terminal (2 pages + help overlay)
-
+// Budget Terminal — shared logic for Quick Check + Bills
 (() => {
   // ---------- utils ----------
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => [...r.querySelectorAll(s)];
-  const moneyFmt = new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const KEY = 'bt.bills.v2'; // new key (safe reset); change to v1 if you want to reuse old data
+  const fmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const parseMoneyStr = (str) => {
-    const raw = String(str||'').replace(/[^0-9.-]/g,'');
-    const val = parseFloat(raw);
-    return Number.isFinite(val) ? val : 0;
+  const KEY = 'bt.bills.v2';
+  const NOW = () => new Date();
+
+  const toMoney = (v) => {
+    const n = Number(String(v).replace(/[^0-9.-]/g,''));
+    return Number.isFinite(n) ? n : 0;
   };
-  const parseMoneyInput = (el) => parseMoneyStr(el?.value);
 
-  // Select-on-focus helper
-  function selectOnFocus(el) {
-    el?.addEventListener('focus', () => el.select());
-  }
+  const setBadge = (el, level) => {
+    if (!el) return;
+    el.classList.remove('success','warning','danger');
+    el.classList.add(level);
+    el.textContent = level[0].toUpperCase() + level.slice(1);
+  };
 
-  // Debounce helper
-  function debounce(fn, ms=200){
-    let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
-  }
+  const selectOnFocus = (el) => el?.addEventListener('focus', e => e.target.select(), {passive:true});
 
-  // Storage
-  function loadBills(){
-    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
-    catch { return []; }
-  }
-  const saveBills = debounce((bills)=>{
-    localStorage.setItem(KEY, JSON.stringify(bills));
-    stampUpdated();
-  }, 150);
+  const debounce = (fn, ms=200) => {
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
+  };
 
-  // Footer last updated (file/data perspective)
-  function stampUpdated(){
+  const setToday = () => {
+    const el = $('#todayDate');
+    if (!el) return;
+    el.textContent = new Date().toLocaleDateString('en-US', {
+      weekday:'short', month:'short', day:'numeric', year:'numeric'
+    });
+  };
+
+  const setLastUpdated = () => {
     const el = $('#lastUpdated');
     if (!el) return;
-    const now = new Date();
-    el.textContent = `LAST UPDATED — ${now.toLocaleString()}`;
-  }
+    el.textContent = 'Last updated: ' + new Date(document.lastModified).toLocaleString();
+  };
 
-  // ---------- HELP OVERLAY ----------
-  const helpBtn = $('#helpBtn');
-  const helpModal = $('#helpModal');
-  const helpClose = $('#helpClose');
-  helpBtn?.addEventListener('click', ()=>{
-    helpModal?.classList.remove('hidden');
-    helpModal?.setAttribute('aria-hidden','false');
-  });
-  helpClose?.addEventListener('click', ()=>{
-    helpModal?.classList.add('hidden');
-    helpModal?.setAttribute('aria-hidden','true');
-  });
-  helpModal?.addEventListener('click', (e)=>{
-    if (e.target === helpModal) helpModal.classList.add('hidden');
-  });
-  document.addEventListener('keydown',(e)=>{
-    if (e.key==='Escape') helpModal?.classList.add('hidden');
-  });
+  // ---------- storage ----------
+  const loadBills = () => {
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+    catch { return []; }
+  };
+  const saveBills = (arr) => localStorage.setItem(KEY, JSON.stringify(arr || []));
+  let bills = loadBills();
 
-  // ---------- QUICK CHECK PAGE ----------
-  const balanceEl     = $('#balance');
-  const purchaseEl    = $('#purchase');
-  const totalUnpaidEl = $('#totalUnpaid');
-  const leftAfterEl   = $('#leftAfter');
-  const afterBuyEl    = $('#afterBuy');
-  const coverageBadge = $('#coverageBadge');
-  const buyBadge      = $('#buyBadge');
-  const unpaidList    = $('#unpaidList');
+  // ---------- shared calculations ----------
+  const isUnpaid = (b) => !b.paid && Number.isFinite(+b.amount) && +b.amount > 0;
 
-  const cadenceLine   = $('#cadenceLine');
-  const cadenceEarly  = $('#cadenceEarly');
-  const cadenceLate   = $('#cadenceLate');
+  // group by 1st / 15th using actual date input (yyyy-mm-dd)
+  const monthDay = (iso) => {
+    const d = new Date(iso);
+    return Number.isFinite(d.getTime()) ? d.getDate() : null;
+  };
 
-  function setBadge(el, level){ // success | warning | danger
-    el?.classList.remove('success','warning','danger');
-    el?.classList.add(level);
-    if (el) el.textContent = level.toUpperCase();
-  }
+  const totals = () => {
+    const unpaid = bills.filter(isUnpaid);
+    const totalUnpaid = unpaid.reduce((s,b)=> s + (+b.amount||0), 0);
 
-  function updateCadence(bills){
-    if (!cadenceLine && !cadenceEarly && !cadenceLate) return;
-    const today = new Date();
-    const y=today.getFullYear(), m=today.getMonth();
-    const daysInMonth = new Date(y,m+1,0).getDate();
-
-    const getDay = (dStr)=>{
-      // type="date" -> YYYY-MM-DD
-      const d = new Date(dStr);
-      if (!isNaN(d)) return d.getDate();
-      const n = parseInt(dStr,10);
-      return Number.isFinite(n)? n : null;
-    };
-
-    const unpaid = bills.filter(b=>!b.paid);
-    const early = unpaid
-      .filter(b => {
-        const day = getDay(b.due);
-        return day!=null && day>=1 && day<=15;
-      })
-      .reduce((sum,b)=> sum + (+b.amount||0), 0);
-
-    const late = unpaid
-      .filter(b => {
-        const day = getDay(b.due);
-        return day!=null && day>15 && day<=daysInMonth;
-      })
-      .reduce((sum,b)=> sum + (+b.amount||0), 0);
-
-    cadenceLine && (cadenceLine.textContent = 'BILLS GROUPED BY PAY PERIOD:');
-    cadenceEarly && (cadenceEarly.textContent = `BY 1ST: $${moneyFmt.format(early)}`);
-    cadenceLate  && (cadenceLate.textContent  = `BY 15TH: $${moneyFmt.format(late)}`);
-  }
-
-  function renderUnpaidList(bills){
-    if (!unpaidList) return;
-    const today = new Date();
-    const y=today.getFullYear(), m=today.getMonth();
-    const daysInMonth = new Date(y,m+1,0).getDate();
-
-    const getDay = (dStr)=>{
-      const d = new Date(dStr);
-      if (!isNaN(d)) return d.getDate();
-      const n = parseInt(dStr,10);
-      return Number.isFinite(n)? n : null;
-    };
-
-    const items = bills
-      .filter(b=>!b.paid)
-      .map(b=>{
-        const day = getDay(b.due);
-        return {name:b.name||'BILL', day: day??99, amount:+b.amount||0}
-      })
-      .sort((a,b)=> a.day - b.day);
-
-    unpaidList.innerHTML = items.length
-      ? items.map(it => `<li>${String(it.name).toUpperCase()} — ${isFinite(it.day)? it.day:'?'} — $${moneyFmt.format(it.amount)}</li>`).join('')
-      : '<li class="muted">No unpaid bills saved.</li>';
-  }
-
-  function calcQuick(){
-    if (!totalUnpaidEl) return; // not on this page
-    const bills = loadBills();
-
-    const totalUnpaid = bills.reduce((sum,b)=> sum + (!b.paid ? (+b.amount||0) : 0), 0);
-    totalUnpaidEl.textContent = moneyFmt.format(totalUnpaid);
-
-    const bal = parseMoneyInput(balanceEl);
-    const buy = parseMoneyInput(purchaseEl);
-    const left = bal - totalUnpaid;
-    const after = left - buy;
-
-    leftAfterEl.textContent = moneyFmt.format(left);
-    afterBuyEl.textContent  = moneyFmt.format(after);
-
-    setBadge(coverageBadge, left >= 0 ? 'success' : 'danger');
-    if (left < 0)       setBadge(buyBadge,'danger');
-    else if (after < 0) setBadge(buyBadge,'warning');
-    else                setBadge(buyBadge,'success');
-
-    updateCadence(bills);
-    renderUnpaidList(bills);
-  }
-
-  // 50/30/20 on Quick Check
-  const splitAmountEl = $('#splitAmount');
-  const split50El = $('#split50'), split30El = $('#split30'), split20El = $('#split20');
-
-  function calcSplit(){
-    if (!splitAmountEl) return;
-    const amt = parseMoneyInput(splitAmountEl);
-    const n50 = Math.max(0, amt*0.50);
-    const n30 = Math.max(0, amt*0.30);
-    const n20 = Math.max(0, amt*0.20);
-    split50El.textContent = `$${moneyFmt.format(n50)}`;
-    split30El.textContent = `$${moneyFmt.format(n30)}`;
-    split20El.textContent = `$${moneyFmt.format(n20)}`;
-  }
-
-  // ---------- BILLS PAGE ----------
-  const tbody = $('#billTable tbody');
-  const addBillBtn = $('#addBillBtn');
-  const clearPaidBtn = $('#clearPaidBtn');
-
-  function bindRow(tr, bill, allBills){
-    const name = $('.b-name', tr);
-    const due  = $('.b-due', tr);
-    const amt  = $('.b-amt', tr);
-    const paid = $('.b-paid', tr);
-    const del  = $('.rowDel', tr);
-
-    name.value = bill.name || '';
-    due.value  = bill.due  || '';
-    amt.value  = bill.amount != null ? bill.amount : '';
-    paid.checked = !!bill.paid;
-
-    [name,due,amt].forEach(el=>selectOnFocus(el));
-
-    const update = ()=>{
-      bill.name   = name.value.trim();
-      bill.due    = due.value; // ISO date or free text (kept ISO here)
-      bill.amount = parseMoneyInput(amt);
-      bill.paid   = !!paid.checked;
-      saveBills(allBills);
-      stampUpdated();
-    };
-
-    name.addEventListener('input', update);
-    due.addEventListener('input', update);
-    amt.addEventListener('input', update);
-    paid.addEventListener('change', update);
-
-    del.addEventListener('click', ()=>{
-      if (!confirm('DELETE this bill?')) return;
-      const idx = allBills.indexOf(bill);
-      if (idx>=0) allBills.splice(idx,1);
-      saveBills(allBills);
-      renderBills(); // redraw
-      stampUpdated();
-    });
-  }
-
-  function renderBills(){
-    if (!tbody) return;
-    let bills = loadBills();
-    // sort by date (ISO) or fallback
-    bills.sort((a,b)=>{
-      const da = new Date(a.due); const db = new Date(b.due);
-      if (!isNaN(da) && !isNaN(db)) return da - db;
-      return String(a.due||'').localeCompare(String(b.due||''));
+    let early=0, late=0;
+    unpaid.forEach(b => {
+      const md = monthDay(b.date);
+      if (md == null) return;
+      if (md <= 15) early += (+b.amount||0);
+      else late += (+b.amount||0);
     });
 
-    tbody.innerHTML = '';
-    bills.forEach(b=>{
-      const tr = document.importNode($('#billRowTpl').content, true).firstElementChild;
-      bindRow(tr, b, bills);
-      tbody.appendChild(tr);
-    });
+    return { totalUnpaid, early, late };
+  };
+
+  // ---------- QUICK CHECK page ----------
+  function initQuickCheck(){
+    const balance   = $('#balance');
+    const purchase  = $('#purchase');
+    const totalEl   = $('#totalUnpaid');
+    const leftEl    = $('#leftAfter');
+    const afterEl   = $('#afterBuy');
+    const coverBad  = $('#coverageBadge');
+    const buyBad    = $('#buyBadge');
+    const pfEarlyEl = $('#prefundEarly');
+    const pfLateEl  = $('#prefundLate');
+
+    const splitInput = $('#splitInput');
+    const split50 = $('#split50'), split30 = $('#split30'), split20 = $('#split20');
+
+    [balance,purchase,splitInput].forEach(selectOnFocus);
+
+    const recalc = () => {
+      bills = loadBills();                      // always pull latest
+      const { totalUnpaid, early, late } = totals();
+
+      // main calc
+      const bal = toMoney(balance?.value||0);
+      const buy = toMoney(purchase?.value||0);
+      const left = bal - totalUnpaid;
+      const after = left - buy;
+
+      totalEl.textContent = fmt.format(totalUnpaid || 0);
+      leftEl.textContent  = fmt.format(left);
+      afterEl.textContent = fmt.format(after);
+
+      setBadge(coverBad, left >= 0 ? 'success' : 'danger');
+      if (left < 0) setBadge(buyBad,'danger');
+      else if (after < 0) setBadge(buyBad,'warning');
+      else setBadge(buyBad,'success');
+
+      // pre-fund display
+      pfEarlyEl.textContent = '$' + fmt.format(early || 0);
+      pfLateEl.textContent  = '$' + fmt.format(late  || 0);
+
+      // split
+      const amt = toMoney(splitInput?.value||0);
+      split50.textContent = '$' + fmt.format(amt * 0.50);
+      split30.textContent = '$' + fmt.format(amt * 0.30);
+      split20.textContent = '$' + fmt.format(amt * 0.20);
+    };
+
+    balance?.addEventListener('input', recalc);
+    purchase?.addEventListener('input', recalc);
+    splitInput?.addEventListener('input', recalc);
+
+    recalc();
   }
 
-  addBillBtn?.addEventListener('click', ()=>{
-    const bills = loadBills();
-    bills.push({ name:'', due:'', amount:0, paid:false });
-    saveBills(bills);
-    renderBills();
-  });
+  // ---------- BILLS page ----------
+  function initBills(){
+    const body = $('#billBody');
+    const tpl  = $('#billRowTpl');
+    const addBtn = $('#addBillBtn');
+    const clearBtn = $('#clearPaidBtn');
 
-  clearPaidBtn?.addEventListener('click', ()=>{
-    const bills = loadBills();
-    bills.forEach(b=> b.paid=false);
-    saveBills(bills);
-    renderBills();
-  });
+    const sumEarly = $('#sumEarly');
+    const sumLate  = $('#sumLate');
+    const sumTotal = $('#sumTotal');
 
-  // ---------- INIT ----------
-  // wire inputs
-  balanceEl?.addEventListener('input', calcQuick);
-  purchaseEl?.addEventListener('input', calcQuick);
-  splitAmountEl?.addEventListener('input', calcSplit);
+    const write = debounce(() => {
+      saveBills(bills);
+      refresh();
+    }, 150);
 
-  // focus helpers
-  [balanceEl,purchaseEl,splitAmountEl].forEach(selectOnFocus);
+    const bindRow = (rowEl, bill) => {
+      const name = rowEl.querySelector('.b-name');
+      const date = rowEl.querySelector('.b-date');
+      const amt  = rowEl.querySelector('.b-amt');
+      const paid = rowEl.querySelector('.b-paid');
+      const del  = rowEl.querySelector('.rowDel');
 
-  // first render per page
-  renderBills();   // no-op on Quick Check
-  calcQuick();     // no-op on Bills
-  calcSplit();     // no-op if not present
-  stampUpdated();
+      name.value = bill.name || '';
+      date.value = bill.date || '';
+      amt.value  = bill.amount != null ? bill.amount : '';
+      paid.checked = !!bill.paid;
+
+      [name, amt].forEach(selectOnFocus);
+
+      const update = () => {
+        bill.name   = name.value.trim();
+        bill.date   = date.value || '';
+        bill.amount = toMoney(amt.value);
+        bill.paid   = !!paid.checked;
+        write();
+      };
+
+      name.addEventListener('input', update);
+      date.addEventListener('change', update);
+      amt.addEventListener('input', () => {
+        // live formatting on blur only to avoid cursor jump
+      });
+      amt.addEventListener('blur', () => { amt.value = bill.amount ? fmt.format(bill.amount) : ''; });
+      paid.addEventListener('change', update);
+
+      del.addEventListener('click', () => {
+        if (!confirm('Delete this bill?')) return;
+        bills = bills.filter(b => b !== bill);
+        write();
+        render();
+      });
+    };
+
+    const render = () => {
+      body.innerHTML = '';
+      bills
+        .slice()
+        .sort((a,b) => {
+          const ad = new Date(a.date||'1970-01-01').getTime();
+          const bd = new Date(b.date||'1970-01-01').getTime();
+          return ad - bd;
+        })
+        .forEach(bill => {
+          const node = document.importNode(tpl.content, true);
+          const row = node.querySelector('.row');
+          bindRow(row, bill);
+          body.appendChild(node);
+        });
+
+      const { totalUnpaid, early, late } = totals();
+      sumTotal.textContent = '$' + fmt.format(totalUnpaid || 0);
+      sumEarly.textContent = '$' + fmt.format(early || 0);
+      sumLate.textContent  = '$' + fmt.format(late  || 0);
+    };
+
+    const refresh = () => {              // NaN guard & repaint
+      bills = (loadBills() || []).map(b => ({
+        name: b.name || '',
+        date: b.date || '',
+        amount: Number.isFinite(+b.amount) ? +b.amount : 0,
+        paid: !!b.paid
+      }));
+      render();
+    };
+
+    addBtn?.addEventListener('click', () => {
+      bills.push({ name:'', date:'', amount:0, paid:false });
+      saveBills(bills);
+      render();
+    });
+
+    clearBtn?.addEventListener('click', () => {
+      bills.forEach(b => b.paid = false);
+      saveBills(bills);
+      render();
+    });
+
+    // initial
+    refresh();
+  }
+
+  // ---------- boot ----------
+  setToday();
+  setLastUpdated();
+
+  if (document.body.contains($('#billBody'))) {
+    initBills();
+  } else {
+    initQuickCheck();
+  }
 })();
