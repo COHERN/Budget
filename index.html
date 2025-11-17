@@ -3,91 +3,126 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Budget Terminal — Quick Check</title>
+  <title>Budget Terminal</title>
+  <link rel="icon" href="icons/icon-192.png">
   <link href="style.css" rel="stylesheet">
 </head>
 <body>
-  <header class="nav">
-    <div class="wrap">
-      <div class="brand">BUDGET TERMINAL</div>
-      <nav class="links">
-        <a class="active" href="index.html">Quick Check</a>
-        <a href="bills.html">Bills</a>
-      </nav>
-      <div id="todayDate" class="today"></div>
-    </div>
-  </header>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">$ BUDGET TERMINAL</div>
+      <div id="todayLine" class="todayLine"></div>
+    </header>
 
-  <main class="wrap">
-    <section class="card">
-      <h1>Quick Check</h1>
+    <nav class="tabs">
+      <button class="tab active" data-tab="quick">Quick Check</button>
+      <button class="tab" data-tab="bills">Bills</button>
+    </nav>
 
-      <div class="grid2">
-        <label>Current Balance
-          <div class="inputWrap">
+    <!-- QUICK CHECK TAB -->
+    <section id="tab-quick" class="tabpane active">
+      <div class="card">
+        <h2>Quick Check</h2>
+
+        <div class="grid2">
+          <label>
+            CURRENT BALANCE
             <input id="balance" inputmode="decimal" placeholder="0.00">
-          </div>
-        </label>
+          </label>
 
-        <label>Purchase (optional)
-          <div class="inputWrap">
+          <label>
+            PURCHASE (OPTIONAL)
             <input id="purchase" inputmode="decimal" placeholder="0.00">
+          </label>
+        </div>
+
+        <div class="grid3 kpiRow">
+          <div>
+            <div class="muted">TOTAL UNPAID</div>
+            <div id="totalUnpaid" class="kpi">0.00</div>
           </div>
-        </label>
-      </div>
-
-      <div class="grid3 kpis">
-        <div>
-          <div class="muted">Total Unpaid</div>
-          <div id="totalUnpaid" class="kpi">—</div>
-        </div>
-        <div>
-          <div class="muted">Left After Bills</div>
-          <div id="leftAfter" class="kpi">—</div>
-        </div>
-        <div>
-          <div class="muted">After Purchase Left</div>
-          <div id="afterBuy" class="kpi">—</div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <span id="coverageBadge" class="pill warning">Warning</span>
-        <span id="buyBadge" class="pill warning">Warning</span>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="grid2">
-        <div>
-          <div class="muted">Pre-fund 1st</div>
-          <div id="prefundEarly" class="kpi">—</div>
-        </div>
-        <div>
-          <div class="muted">Pre-fund 15th</div>
-          <div id="prefundLate" class="kpi">—</div>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <h2>Unexpected Cash Split (50/30/20)</h2>
-      <div class="grid2">
-        <label>Enter Amount
-          <div class="inputWrap">
-            <input id="splitInput" inputmode="decimal" placeholder="0.00">
+          <div>
+            <div class="muted">LEFT AFTER BILLS</div>
+            <div id="leftAfter" class="kpi">0.00</div>
           </div>
-        </label>
-        <div class="grid3 tight">
-          <div><div class="muted">50%</div><div id="split50" class="kpi smallkpi">—</div></div>
-          <div><div class="muted">30%</div><div id="split30" class="kpi smallkpi">—</div></div>
-          <div><div class="muted">20%</div><div id="split20" class="kpi smallkpi">—</div></div>
+          <div>
+            <div class="muted">AFTER PURCHASE LEFT</div>
+            <div id="afterBuy" class="kpi">0.00</div>
+          </div>
+        </div>
+
+        <div class="actionsRow">
+          <span id="coverageBadge" class="pill pill-warning">Balance vs Bills</span>
+          <span id="buyBadge" class="pill pill-warning">Purchase Check</span>
+        </div>
+
+        <div class="cadenceBlock">
+          <div class="muted">PREFUND SUMMARY</div>
+          <div id="prefundFirst">Prefund 1st: $0.00</div>
+          <div id="prefundFifteenth">Prefund 15th: $0.00</div>
         </div>
       </div>
     </section>
-  </main>
 
-  <footer class="foot"><div class="wrap"><span id="lastUpdated">Last updated: —</span></div></footer>
+    <!-- BILLS TAB -->
+    <section id="tab-bills" class="tabpane">
+      <div class="card">
+        <h2>BILLS</h2>
+
+        <div class="billActions">
+          <button id="addBillBtn" class="btn">+ ADD BILL</button>
+          <button id="clearPaidBtn" class="btn ghost">CLEAR PAID</button>
+          <button id="saveBillsBtn" class="btn ghost">SAVE BILLS</button>
+        </div>
+
+        <div class="tableWrap">
+          <table id="billTable">
+            <thead>
+              <tr>
+                <th>BILL</th>
+                <th>DATE</th>
+                <th>AMOUNT</th>
+                <th>PAID</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="billTableBody">
+              <!-- rows will be injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="muted small summaryLine">
+          Unpaid total: <span id="unpaidSummary">$0.00</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Budget Terminal · local-only · <span id="lastUpdated">Last updated: —</span></span>
+    </footer>
+  </div>
+
+  <!-- TEMPLATE FOR BILL ROW -->
+  <template id="billRowTpl">
+    <tr>
+      <td>
+        <input class="b-name" placeholder="Rent, Car, Phone…">
+      </td>
+      <td>
+        <input class="b-due" type="date">
+      </td>
+      <td>
+        <input class="b-amt" inputmode="decimal" placeholder="0.00">
+      </td>
+      <td class="center">
+        <input type="checkbox" class="b-paid">
+      </td>
+      <td class="center">
+        <button class="rowDel btn ghost">DELETE</button>
+      </td>
+    </tr>
+  </template>
 
   <script src="app.js"></script>
 </body>
